@@ -1,0 +1,196 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: taskc-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: taskc_root_2024
+      MYSQL_DATABASE: taskc
+      MYSQL_USER: taskc_user
+      MYSQL_PASSWORD: taskc_password_2024
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./deployments/mysql/init:/docker-entrypoint-initdb.d
+      - ./deployments/mysql/conf:/etc/mysql/conf.d
+    networks:
+      - taskc-network
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --binlog-expire-logs-seconds=172800
+      --max-connections=1000
+      --innodb-buffer-pool-size=256M
+
+  # Redis Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    container_name: taskc-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./deployments/redis/redis.conf:/etc/redis/redis.conf
+    networks:
+      - taskc-network
+    command: redis-server /etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # TaskC Backend API
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskc-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Database Configuration
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: taskc
+      DB_USER: taskc_user
+      DB_PASSWORD: taskc_password_2024
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      
+      # Server Configuration
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      GIN_MODE: release
+      
+      # Log Configuration
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      LOG_DIRECTORY: /app/logs
+      
+      # Service Configuration
+      HEARTBEAT_TIMEOUT: 30s
+      PROBE_TIMEOUT: 10s
+      ALERT_RATE_LIMIT: 100
+      LOG_RETENTION_DAYS: 30
+      
+      # Security Configuration
+      JWT_SECRET: taskc_jwt_secret_change_in_production_2024
+      API_RATE_LIMIT: 1000
+      
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./config:/app/configs
+    networks:
+      - taskc-network
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend (React Application)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: taskc-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:8080/api/v1
+      REACT_APP_WS_URL: ws://localhost:8080/ws
+    networks:
+      - taskc-network
+    depends_on:
+      - backend
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: taskc-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployments/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./deployments/nginx/conf.d:/etc/nginx/conf.d
+      - ./deployments/ssl:/etc/nginx/ssl
+    networks:
+      - taskc-network
+    depends_on:
+      - backend
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: taskc-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - taskc-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: taskc-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: taskc_grafana_2024
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployments/grafana/provisioning:/etc/grafana/provisioning
+      - ./deployments/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - taskc-network
+    depends_on:
+      - prometheus
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  taskc-network:
+    driver: bridge

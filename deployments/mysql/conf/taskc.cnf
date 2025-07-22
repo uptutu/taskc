@@ -1,0 +1,39 @@
+[mysqld]
+# General Configuration
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+default-time-zone = '+00:00'
+
+# Performance Configuration
+max_connections = 1000
+innodb_buffer_pool_size = 256M
+innodb_log_file_size = 64M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# Binary Logging
+binlog_expire_logs_seconds = 172800
+max_binlog_size = 100M
+
+# Query Cache (disabled for performance)
+query_cache_type = 0
+query_cache_size = 0
+
+# Slow Query Log
+slow_query_log = 1
+slow_query_log_file = /var/lib/mysql/slow.log
+long_query_time = 2
+
+# Error Logging
+log_error = /var/lib/mysql/error.log
+log_error_verbosity = 2
+
+# General Logging (disable in production)
+# general_log = 1
+# general_log_file = /var/lib/mysql/general.log
+
+[mysql]
+default-character-set = utf8mb4
+
+[client]
+default-character-set = utf8mb4
