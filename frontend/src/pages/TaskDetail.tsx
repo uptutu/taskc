@@ -27,7 +27,6 @@ import { taskApi } from '@/api';
 import { Task, TaskStatus, TaskHealth, TaskMetrics, Alert as AlertType } from '@/types';
 
 const { Title, Paragraph } = Typography;
-const { TabPane } = Tabs;
 
 const TaskDetail: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
@@ -303,68 +302,84 @@ const TaskDetail: React.FC = () => {
         {/* 详细信息标签页 */}
         <Col span={24}>
           <Card>
-            <Tabs defaultActiveKey="metrics">
-              <TabPane tab="监控指标" key="metrics">
-                <ReactECharts 
-                  option={getMetricsChartOption()} 
-                  style={{ height: '400px' }} 
-                />
-              </TabPane>
-              
-              <TabPane tab="告警历史" key="alerts">
-                <Table
-                  columns={alertColumns}
-                  dataSource={alerts}
-                  rowKey="id"
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: false,
-                  }}
-                  size="small"
-                />
-              </TabPane>
-              
-              <TabPane tab="探测历史" key="probes">
-                <Table
-                  columns={[
-                    { title: '时间', dataIndex: 'timestamp', render: (text: string) => new Date(text).toLocaleString() },
-                    { title: '结果', dataIndex: 'result', render: (text: string) => <Tag color={text === 'SUCCESS' ? 'green' : 'red'}>{text}</Tag> },
-                    { title: '延迟(ms)', dataIndex: 'latency_ms' },
-                    { title: '错误信息', dataIndex: 'error_message', ellipsis: true },
-                  ]}
-                  dataSource={health?.probe_history || []}
-                  rowKey="timestamp"
-                  pagination={false}
-                  size="small"
-                />
-              </TabPane>
-              
-              <TabPane tab="资源使用" key="resources">
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Card title="CPU使用率">
-                      <Statistic
-                        value={health?.resource_usage?.avg_cpu || 0}
-                        precision={1}
-                        suffix="%"
-                        valueStyle={{ 
-                          color: (health?.resource_usage?.avg_cpu || 0) > 80 ? '#f5222d' : '#52c41a' 
-                        }}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={12}>
-                    <Card title="内存使用">
-                      <Statistic
-                        value={health?.resource_usage?.max_mem_mb || 0}
-                        suffix="MB"
-                        valueStyle={{ color: '#1890ff' }}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
-              </TabPane>
-            </Tabs>
+            <Tabs 
+              defaultActiveKey="metrics"
+              items={[
+                {
+                  key: 'metrics',
+                  label: '监控指标',
+                  children: (
+                    <ReactECharts 
+                      option={getMetricsChartOption()} 
+                      style={{ height: '400px' }} 
+                    />
+                  )
+                },
+                {
+                  key: 'alerts',
+                  label: '告警历史',
+                  children: (
+                    <Table
+                      columns={alertColumns}
+                      dataSource={alerts}
+                      rowKey="id"
+                      pagination={{
+                        pageSize: 10,
+                        showSizeChanger: false,
+                      }}
+                      size="small"
+                    />
+                  )
+                },
+                {
+                  key: 'probes',
+                  label: '探测历史',
+                  children: (
+                    <Table
+                      columns={[
+                        { title: '时间', dataIndex: 'timestamp', render: (text: string) => new Date(text).toLocaleString() },
+                        { title: '结果', dataIndex: 'result', render: (text: string) => <Tag color={text === 'SUCCESS' ? 'green' : 'red'}>{text}</Tag> },
+                        { title: '延迟(ms)', dataIndex: 'latency_ms' },
+                        { title: '错误信息', dataIndex: 'error_message', ellipsis: true },
+                      ]}
+                      dataSource={health?.probe_history || []}
+                      rowKey="timestamp"
+                      pagination={false}
+                      size="small"
+                    />
+                  )
+                },
+                {
+                  key: 'resources',
+                  label: '资源使用',
+                  children: (
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Card title="CPU使用率">
+                          <Statistic
+                            value={health?.resource_usage?.avg_cpu || 0}
+                            precision={1}
+                            suffix="%"
+                            valueStyle={{ 
+                              color: (health?.resource_usage?.avg_cpu || 0) > 80 ? '#f5222d' : '#52c41a' 
+                            }}
+                          />
+                        </Card>
+                      </Col>
+                      <Col span={12}>
+                        <Card title="内存使用">
+                          <Statistic
+                            value={health?.resource_usage?.max_mem_mb || 0}
+                            suffix="MB"
+                            valueStyle={{ color: '#1890ff' }}
+                          />
+                        </Card>
+                      </Col>
+                    </Row>
+                  )
+                }
+              ]}
+            />
           </Card>
         </Col>
       </Row>
