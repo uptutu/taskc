@@ -7,8 +7,8 @@ server:
 database:
   host: "localhost"
   port: 3306
-  username: "root"
-  password: "password"
+  username: "taskc_user"
+  password: "taskc_password_2024"
   dbname: "taskc"
   charset: "utf8mb4"
   parse_time: true
