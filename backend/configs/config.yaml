@@ -26,10 +26,10 @@ redis:
   max_retries: 3
 
 heartbeat:
-  timeout: 30s
-  check_interval: 10s
-  max_missed_beats: 3
-  probe_timeout: 5s
+  timeout: 20s           # 心跳超时时间
+  check_interval: 5s     # 检查间隔(优化至5s以满足PRD<5s延迟要求)
+  max_missed_beats: 2    # 最大丢失心跳数(降低以更快检测故障)
+  probe_timeout: 3s      # 探测超时时间
 
 log:
   level: "info"

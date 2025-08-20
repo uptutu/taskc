@@ -21,5 +21,17 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          antd: ['antd'],
+          charts: ['echarts', 'echarts-for-react'],
+          router: ['react-router-dom'],
+          utils: ['axios', 'zustand', 'dayjs'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
   },
 })

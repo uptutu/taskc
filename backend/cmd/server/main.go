@@ -64,11 +64,13 @@ func main() {
 	heartbeatRepo := repository.NewHeartbeatRepository(db)
 	alertRepo := repository.NewAlertRepository(db)
 	probeRepo := repository.NewProbeRepository(db)
+	logRepo := repository.NewLogRepository(db)
 
 	// 初始化Service
 	taskService := service.NewTaskService(taskRepo, heartbeatRepo, alertRepo)
 	heartbeatService := service.NewHeartbeatService(heartbeatRepo, taskRepo, redisClient, service.DefaultHeartbeatConfig())
 	probeService := service.NewProbeService(probeRepo, taskRepo, service.DefaultProbeConfig())
+	logService := service.NewLogService(logRepo, redisClient, service.DefaultLogConfig())
 
 	// 初始化Handler
 	taskHandler := handlers.NewTaskHandler(taskService, heartbeatService, probeService)
@@ -92,7 +94,7 @@ func main() {
 	routes.SetupRoutes(app, taskHandler)
 
 	// 启动定时任务
-	startCronJobs(cfg, heartbeatService)
+	startCronJobs(cfg, heartbeatService, logService)
 
 	// 启动服务器
 	go func() {
@@ -158,11 +160,11 @@ func connectRedis(cfg *config.Config) (*redis.Client, error) {
 	return client, nil
 }
 
-func startCronJobs(cfg *config.Config, heartbeatService *service.HeartbeatService) {
+func startCronJobs(cfg *config.Config, heartbeatService *service.HeartbeatService, logService *service.LogService) {
 	c := cron.New()
 
-	// 心跳检查任务
-	c.AddFunc("@every 10s", func() {
+	// 心跳检查任务 - 优化为5s间隔以满足PRD要求(<5s延迟)
+	c.AddFunc("@every 5s", func() {
 		ctx := context.Background()
 		if err := heartbeatService.CheckMissedHeartbeats(
 			ctx,
@@ -173,12 +175,23 @@ func startCronJobs(cfg *config.Config, heartbeatService *service.HeartbeatServic
 		}
 	})
 
-	// 日志清理任务
+	// 日志清理任务 - 实现完整的清理逻辑
 	c.AddFunc(fmt.Sprintf("0 %s * * *", cfg.Log.CleanupTime), func() {
-		// 实现日志清理逻辑
-		logger.Info("Starting log cleanup job")
+		ctx := context.Background()
+		logger.Info("Starting scheduled log cleanup job")
+		if err := logService.CleanupOldLogs(ctx); err != nil {
+			logger.Error("Failed to cleanup old logs", zap.Error(err))
+		}
+	})
+
+	// 磁盘使用率检查任务 - 每小时检查一次
+	c.AddFunc("0 * * * *", func() {
+		ctx := context.Background()
+		if err := logService.CheckDiskUsage(ctx); err != nil {
+			logger.Error("Failed to check disk usage", zap.Error(err))
+		}
 	})
 
 	c.Start()
-	logger.Info("Cron jobs started")
+	logger.Info("Cron jobs started with optimized intervals")
 }

@@ -1,5 +1,5 @@
 import api from './client';
-import { Task, TaskHealth, TaskMetrics, Alert, Heartbeat, ProbeConfig, PaginatedResponse } from '@/types';
+import { Task, TaskHealth, TaskMetrics, Alert, PaginatedResponse } from '@/types';
 
 export const taskApi = {
   // 任务管理
@@ -26,11 +26,11 @@ export const taskApi = {
     api.get<TaskMetrics>(`/tasks/${taskId}/metrics`, { params: { hours } }),
 
   // 心跳管理
-  sendHeartbeat: (taskId: string, data: { timestamp: number; metadata: any }) =>
+  sendHeartbeat: (taskId: string, data: { timestamp: number; metadata: Record<string, unknown> }) =>
     api.post(`/heartbeat/${taskId}`, data),
 
   // 探测管理
-  triggerProbe: (data: { task_id: string; type: string; config: any }) =>
+  triggerProbe: (data: { task_id: string; type: string; config: Record<string, unknown> }) =>
     api.post('/probe', data),
 
   // 告警管理

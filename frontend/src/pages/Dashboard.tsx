@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Row, Col, Card, Statistic, Progress, Table, Tag, Typography, Space } from 'antd';
 import { 
   AppstoreOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  CloseCircleOutlined,
-  BellOutlined
+  CloseCircleOutlined
 } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
-import { taskApi, dashboardApi } from '@/api';
+import { taskApi } from '@/api';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { Task, TaskStatus } from '@/types';
 
@@ -19,11 +18,7 @@ const Dashboard: React.FC = () => {
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -46,7 +41,11 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setStats]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const getStatusOption = () => {
     return {

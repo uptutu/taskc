@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -37,13 +37,7 @@ const TaskDetail: React.FC = () => {
   const [alerts, setAlerts] = useState<AlertType[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (taskId) {
-      loadTaskData();
-    }
-  }, [taskId]);
-
-  const loadTaskData = async () => {
+  const loadTaskData = useCallback(async () => {
     if (!taskId) return;
 
     try {
@@ -64,7 +58,13 @@ const TaskDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId]);
+
+  useEffect(() => {
+    if (taskId) {
+      loadTaskData();
+    }
+  }, [taskId, loadTaskData]);
 
   const getStatusColor = (status: TaskStatus) => {
     switch (status) {

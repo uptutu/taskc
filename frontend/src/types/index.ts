@@ -26,7 +26,7 @@ export interface HeartbeatMetadata {
   cpu_load: number;
   mem_used_mb: number;
   queue_size: number;
-  custom_data?: Record<string, any>;
+  custom_data?: Record<string, unknown>;
 }
 
 export interface Alert {
