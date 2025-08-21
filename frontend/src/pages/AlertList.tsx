@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Table,
   Card,
@@ -41,11 +41,7 @@ const AlertList: React.FC = () => {
     dateRange: null as [dayjs.Dayjs, dayjs.Dayjs] | null,
   });
 
-  useEffect(() => {
-    loadAlerts();
-  }, [pagination.current, pagination.pageSize, filters.level]);
-
-  const loadAlerts = async () => {
+  const loadAlerts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await taskApi.getAlerts(
@@ -64,7 +60,11 @@ const AlertList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.current, pagination.pageSize, filters.level]);
+
+  useEffect(() => {
+    loadAlerts();
+  }, [loadAlerts]);
 
   const getLevelColor = (level: AlertLevel) => {
     switch (level) {

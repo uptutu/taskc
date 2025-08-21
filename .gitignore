@@ -62,6 +62,14 @@ Thumbs.db
 *.out
 server
 */server
+bin/
+*/bin/
+vendor/
+*/vendor/
+
+# Go development
+.go-version
+__debug_bin
 
 # Temporary files
 /tmp/

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Task, TaskStatus } from '@/types';
+import { Task } from '@/types';
 
 interface TaskState {
   tasks: Task[];
@@ -17,7 +17,7 @@ interface TaskState {
   setError: (error: string | null) => void;
 }
 
-export const useTaskStore = create<TaskState>((set, get) => ({
+export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],
   selectedTask: null,
   loading: false,

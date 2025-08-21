@@ -34,12 +34,12 @@ type HeartbeatConfig struct {
 	CacheExpiry    time.Duration
 }
 
-// DefaultHeartbeatConfig returns default heartbeat configuration.
+// DefaultHeartbeatConfig returns optimized heartbeat configuration for PRD requirements.
 func DefaultHeartbeatConfig() HeartbeatConfig {
 	return HeartbeatConfig{
-		Timeout:        30 * time.Second,
-		MaxMissedBeats: 3,
-		CacheExpiry:    5 * time.Minute,
+		Timeout:        20 * time.Second,  // 优化：减少超时时间
+		MaxMissedBeats: 2,                 // 优化：减少最大丢失次数以更快检测故障
+		CacheExpiry:    3 * time.Minute,   // 优化：减少缓存过期时间
 	}
 }
 

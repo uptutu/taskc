@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   Table, 
   Card, 
@@ -32,6 +32,12 @@ import { Task, TaskStatus } from '@/types';
 const { Title } = Typography;
 const { Option } = Select;
 
+interface CreateTaskFormData {
+  task_id: string;
+  name: string;
+  description?: string;
+}
+
 const TaskList: React.FC = () => {
   const navigate = useNavigate();
   const { tasks, setTasks, addTask, removeTask, loading, setLoading } = useTaskStore();
@@ -46,11 +52,7 @@ const TaskList: React.FC = () => {
   });
   const [form] = Form.useForm();
 
-  useEffect(() => {
-    loadTasks();
-  }, [pagination.current, pagination.pageSize, filters.status]);
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
       const response = await taskApi.getTasks(
@@ -69,9 +71,13 @@ const TaskList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [pagination.current, pagination.pageSize, filters.status, setLoading, setTasks]);
 
-  const handleCreateTask = async (values: any) => {
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const handleCreateTask = async (values: CreateTaskFormData) => {
     try {
       const newTask = await taskApi.createTask(values);
       addTask(newTask);
